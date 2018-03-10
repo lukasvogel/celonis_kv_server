@@ -11,30 +11,49 @@
 #include "EntryPosition.h"
 #include "EntryHeader.h"
 
-class Buffer {
+class Bucket {
 
 public:
-    static const size_t SIZE = u n1024 * 1024;
+    static const size_t SIZE = 1024 * 1024;
 
-    Buffer() {
-        data = static_cast<char *>(malloc(SIZE));
-        data_begin = SIZE;
-        offset_end = 0;
+    explicit Bucket(size_t bucket_id) :
+        data_begin(SIZE),
+        offset_end(0),
+        bucket_id(bucket_id) {
+        data = new char[Bucket::SIZE];
     }
+
+    Bucket() :
+            data_begin(SIZE),
+            offset_end(0),
+            bucket_id(0) {
+        data = new char[Bucket::SIZE];
+    }
+
 
     void compact();
 
-    void put(size_t hash, string key, string value);
+    void split(size_t global_depth, Bucket &new_bucket);
+
+    bool put(size_t hash, string key, string value);
 
     bool get(size_t hash, string key, string *result);
 
     void del(size_t hash, string key);
 
+    char* get_data();
+
     // for debugging
     double get_usage();
 
+    size_t bucket_id;
+
+    int local_depth = 0;
+
+    unsigned ref_count = 0;
+
 private:
-    char *data;
+    char *data{};
     size_t data_begin;
     size_t offset_end;
 

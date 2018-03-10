@@ -7,8 +7,7 @@
 
 #include <string>
 #include <unordered_map>
-#include "EntryPosition.h"
-#include "Buffer.h"
+#include "BucketManager.h"
 
 using namespace std;
 
@@ -18,8 +17,7 @@ class KVStore {
 
 public:
 
-    static const int PAGES_IN_MEM = 10;
-
+    KVStore();
 
     void put(string key, string value);
 
@@ -27,14 +25,13 @@ public:
 
     void del(string key);
 
-    Buffer entries[PAGES_IN_MEM];
-
-
 private:
 
-    int global_depth = 0;
+    size_t global_depth = 0;
 
-    Buffer* get_page(string key);
+    Bucket* get_bucket(size_t hash);
+
+    BucketManager bm;
 
 
 };

@@ -67,7 +67,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
 
     KVStore store;
 
-    size_t BUFFER_SIZE = store.entries[0].SIZE;
+    size_t BUFFER_SIZE = Bucket::SIZE;
     size_t ENTRY_SIZE = 2* (sizeof(char)*6) + sizeof(EntryPosition) + sizeof(EntryHeader);
 
     std::cout << "Entries: " << BUFFER_SIZE/ENTRY_SIZE << endl;
