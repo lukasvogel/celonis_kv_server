@@ -22,6 +22,7 @@ public:
 
     Bucket& get(size_t bucket_id);
 
+
     void release(Bucket &bucket);
 
 private:
@@ -33,9 +34,9 @@ private:
     unsigned evict();
 
     int file;
-
     unordered_map<size_t, unsigned> bucket_mapping;
     Bucket buckets[BUCKETS_IN_MEM];
+
 };
 
 

@@ -15,25 +15,33 @@ void KVStore::put(const string key, const string value) {
         return;
     } else {
         // insert failed, bucket is full, we have to split
-        if (b->local_depth == global_depth) {
-            global_depth += 1;
 
-            //TODO duplicate num of buckets
+        if (b->local_depth == global_depth) {
+            cout << "Extending hash table!" << endl;
+
+            // double the size of the table
+            unsigned long size = pages.size();
+            for (int i = 0; i < size; i++) {
+                pages.push_back(pages[i]);
+            }
+            global_depth++;
         }
 
         if (b->local_depth < global_depth) {
             // split bucket into two
-            //TODO: what's the number?
-            Bucket b2 = bm.get(1337);
+            Bucket *b2 = &bm.get(++max_bucket_no);
+            b->split(global_depth, *b2);
+            bm.release(*b2);
 
-            b->split(global_depth, b2);
-
-            bm.release(b2);
-
-            //TODO put new buckets into index
+            // Put new bucket into index
+            for (int i = 0; i < pages.size(); i++) {
+                if (pages[i] == b->bucket_id) {
+                    if (i >> pages[i] != 0) {
+                        pages[i] = b2->bucket_id;
+                    }
+                }
+            }
         }
-
-        //try insert again with new bucket
         bm.release(*b);
         put(key, value);
     }
@@ -62,10 +70,13 @@ void KVStore::del(string key) {
 
 Bucket *KVStore::get_bucket(size_t hash) {
     size_t num = hash & ((1 << global_depth) - 1);
-    return &bm.get(num);
+
+    return &bm.get(pages[num]);
 }
 
 KVStore::KVStore() {
     bm = BucketManager();
+    //start with the zero page
+    pages.push_back(0);
 }
 

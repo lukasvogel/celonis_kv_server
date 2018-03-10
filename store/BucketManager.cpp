@@ -29,23 +29,36 @@ Bucket &BucketManager::get(size_t bucket_id) {
         unsigned free_slot = evict();
         Bucket &bucket = buckets[free_slot];
         load(bucket);
-        bucket_mapping.insert(pair<size_t,unsigned>(bucket_id,free_slot));
+        bucket.status = 0x0;
+        bucket.bucket_id = bucket_id;
+        bucket_mapping.insert(pair<size_t, unsigned>(bucket_id, free_slot));
         bucket.ref_count++;
-        return bucket;
+        return buckets[free_slot];
     } else {
         unsigned pos = it->second;
-        auto &bucket = buckets[pos];
+        Bucket &bucket = buckets[pos];
         bucket.ref_count++;
         //TODO: lock
-        return bucket;
+        return buckets[pos];
     }
 }
 
 void BucketManager::release(Bucket &bucket) {
     bucket.ref_count--;
+    flush(bucket);
 }
 
 unsigned BucketManager::evict() {
+    //first look if we still have unclaimed pages
+    if (bucket_mapping.size() < BUCKETS_IN_MEM) {
+        for (unsigned i = 0; i < BUCKETS_IN_MEM; i++) {
+            Bucket cur_bucket = buckets[i];
+
+            if (cur_bucket.status & Bucket::NEWLY_CREATED_MASK) {
+                return i;
+            }
+        }
+    }
     //TODO: better eviction strategy
     for (unsigned i = 0; i < BUCKETS_IN_MEM; i++) {
         Bucket cur_bucket = buckets[i];
@@ -87,3 +100,4 @@ void BucketManager::load(Bucket &bucket) {
         memset(bucket.get_data(), 0, Bucket::SIZE);
     }
 }
+

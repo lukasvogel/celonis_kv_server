@@ -33,6 +33,9 @@ private:
 
     BucketManager bm;
 
+    vector<size_t> pages;
+    size_t max_bucket_no = 0;
+
 
 };
 

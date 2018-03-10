@@ -68,16 +68,16 @@ TEST(Packing, FillingBufferPromptsPacking) {
     KVStore store;
 
     size_t BUFFER_SIZE = Bucket::SIZE;
-    size_t ENTRY_SIZE = 2* (sizeof(char)*6) + sizeof(EntryPosition) + sizeof(EntryHeader);
+    size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
 
-    std::cout << "Entries: " << BUFFER_SIZE/ENTRY_SIZE << endl;
+    std::cout << "Entries: " << BUFFER_SIZE / ENTRY_SIZE << endl;
 
-    for (int i = 10000; i < 10000 + BUFFER_SIZE/ENTRY_SIZE; i++) {
+    for (int i = 10000; i < 10000 + BUFFER_SIZE / ENTRY_SIZE; i++) {
         store.put(to_string(i), to_string(i));
     }
 
     string value;
-    for (int i = 10000; i < 10000 + BUFFER_SIZE/ENTRY_SIZE; i++) {
+    for (int i = 10000; i < 10000 + BUFFER_SIZE / ENTRY_SIZE; i++) {
         store.get(to_string(i), &value);
         EXPECT_EQ(value, to_string(i));
     }
@@ -97,9 +97,53 @@ TEST(Packing, FillingBufferPromptsPacking) {
     for (int i = 10000; i < 10005; i++) {
         value = "0";
         store.get(to_string(i), &value);
-        EXPECT_EQ(value,to_string(i));
+        EXPECT_EQ(value, to_string(i));
     }
 
 
 }
+
+
+TEST(HashTable, FillingTablePromptsExtension) {
+    KVStore store;
+
+    size_t BUFFER_SIZE = Bucket::SIZE;
+    size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
+
+    size_t NUM_ENTRIES = (BUFFER_SIZE / ENTRY_SIZE) * 2; //fills two pages
+    int start_val = 10000;
+    std::cout << "Entries: " << NUM_ENTRIES << endl;
+
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
+        store.put(to_string(i), to_string(i));
+    }
+
+    string value;
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
+        EXPECT_TRUE(store.get(to_string(i), &value));
+        EXPECT_EQ(value, to_string(i));
+    }
+}
+
+TEST(HashTable, LotsOfExtensions) {
+    KVStore store;
+
+    size_t BUFFER_SIZE = Bucket::SIZE;
+    size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
+
+    size_t NUM_ENTRIES = (BUFFER_SIZE / ENTRY_SIZE) * 4; //fills two pages
+    int start_val = 10000;
+    std::cout << "Entries: " << NUM_ENTRIES << endl;
+
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
+        store.put(to_string(i), to_string(i));
+    }
+
+    string value;
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
+        EXPECT_TRUE(store.get(to_string(i), &value));
+        EXPECT_EQ(value, to_string(i));
+    }
+}
+
 

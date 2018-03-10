@@ -11,8 +11,8 @@
 class EntryHeader {
 
 public:
-    size_t key_size;
-    size_t value_size;
+    unsigned key_size;
+    unsigned value_size;
 
     EntryHeader() :
             key_size(0),

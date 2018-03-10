@@ -27,6 +27,7 @@ bool Bucket::put(size_t hash, string key, string value) {
         // retry insertion
         free_space = (this->data_begin - this->offset_end);
         if (free_space >= entry_size + sizeof(EntryPosition)) {
+            cout << "enough room for now..." << endl;
             // we have enough room, write the data
             insert(hash, key, value);
         } else {
@@ -131,17 +132,17 @@ void Bucket::compact() {
         //if we have a gap, move entry further back
         if (ep->offset + entry_size < write_entry) {
             memmove(this->data + write_entry - entry_size, this->data + ep->offset, entry_size);
-            write_entry -= entry_size;
-
-            ep->offset = write_entry;
         }
+
+        write_entry -= entry_size;
+        ep->offset = write_entry;
 
         //if we have an entry pointer gap, move the entry pointer to the front
         if (write_ep < read_ep) {
             memmove(this->data + write_ep, ep, sizeof(EntryPosition));
-            write_ep += sizeof(EntryPosition);
         }
 
+        write_ep += sizeof(EntryPosition);
         read_ep += sizeof(EntryPosition);
 
     }
@@ -172,6 +173,7 @@ void Bucket::split(size_t global_depth, Bucket &new_bucket) {
             // remove it from this bucket
             ep->status = EntryPosition::Status::DELETED;
         }
+        ep_offset += sizeof(EntryPosition);
     }
     // all other entries stay here, compact them
     compact();
