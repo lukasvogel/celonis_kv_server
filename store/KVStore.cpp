@@ -8,21 +8,22 @@
 using namespace std;
 
 void KVStore::put(const string key, const string value) {
-    cout << "putting: " << value << " at key: " << key << endl;
-    entries.put(key,value);
+    //cout << "putting: " << value << " at key: " << key << endl;
+    size_t h = hash<string>()(key);
+    entries[0].put(h,key,value);
 }
 
-string KVStore::get(const string key) {
-    string result = entries.get(key);
-    //TODO: handle not found case
-    if (result != "\0") {
-        return result;
-    } else {
-        cout << "didn't find key: " << key << endl;
-        return nullptr;
-    }
+bool KVStore::get(const string key, string *result) {
+    size_t h = hash<string>()(key);
+    return entries[0].get(h,key, result);
 }
 
 void KVStore::del(string key) {
-    entries.del(key);
+    size_t h = hash<string>()(key);
+    entries[0].del(h,key);
+}
+
+Buffer *KVStore::get_page(string key) {
+    size_t h = hash<string>()(key);
+    return nullptr;
 }

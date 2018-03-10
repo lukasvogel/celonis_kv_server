@@ -18,17 +18,25 @@ class KVStore {
 
 public:
 
+    static const int PAGES_IN_MEM = 10;
+
 
     void put(string key, string value);
 
-    string get(string key);
+    bool get(string key, string *result);
 
     void del(string key);
+
+    Buffer entries[PAGES_IN_MEM];
 
 
 private:
 
-    Buffer entries;
+    int global_depth = 0;
+
+    Buffer* get_page(string key);
+
+
 };
 
 

@@ -14,7 +14,7 @@
 class Buffer {
 
 public:
-    static const size_t SIZE = 1024; // 10 * 1024 * 1024;
+    static const size_t SIZE = u n1024 * 1024;
 
     Buffer() {
         data = static_cast<char *>(malloc(SIZE));
@@ -24,11 +24,11 @@ public:
 
     void compact();
 
-    void put(string key, string value);
+    void put(size_t hash, string key, string value);
 
-    string get(string key);
+    bool get(size_t hash, string key, string *result);
 
-    void del(string key);
+    void del(size_t hash, string key);
 
     // for debugging
     double get_usage();
@@ -38,9 +38,9 @@ private:
     size_t data_begin;
     size_t offset_end;
 
-    bool find(string key, EntryPosition **position, EntryHeader **header);
+    bool find(size_t hash, string key, EntryPosition **position, EntryHeader **header);
 
-    void insert(string key, string value);
+    void insert(size_t hash, string key, string value);
 };
 
 

@@ -20,16 +20,19 @@ public:
     enum class Status { ACTIVE, DELETED };
 
     size_t offset;
+    size_t hash_code;
     Status status;
 
     EntryPosition() :
             offset(0),
+            hash_code(0),
             status(Status::DELETED) {
 
     }
 
-    EntryPosition(size_t offset) :
+    EntryPosition(size_t offset, size_t hash_code) :
         offset(offset),
+        hash_code(hash_code),
         status(Status::ACTIVE){
     }
 
