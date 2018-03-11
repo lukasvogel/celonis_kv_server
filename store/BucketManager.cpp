@@ -28,16 +28,19 @@ Bucket &BucketManager::get(size_t bucket_id) {
     if (it == bucket_mapping.end()) {
 
         unsigned free_slot = evict();
-        load(bucket_id, buckets[free_slot]);
         bucket_mapping[bucket_id] = free_slot;
-        buckets[free_slot].header.ref_count++;
-        return buckets[free_slot];
+
+        Bucket &bucket = buckets[free_slot];
+        load(bucket_id, bucket);
+        bucket.header.ref_count++;
+        bucket.recently_used = true;
+        return bucket;
     } else {
         unsigned pos = it->second;
         Bucket &bucket = buckets[pos];
         bucket.header.ref_count++;
-        //TODO: lock
-        return buckets[pos];
+        bucket.recently_used = true;
+        return bucket;
     }
 
 }
@@ -59,15 +62,18 @@ unsigned BucketManager::evict() {
             }
         }
     }
-    //TODO: better eviction strategy
-    for (unsigned i = 0; i < BUCKETS_IN_MEM; i++) {
-        Bucket cur_bucket = buckets[i];
+    // clock algorithm
+    while (true) {
+        if (buckets[clock_hand].recently_used) {
+            buckets[clock_hand].recently_used = false;
 
-        if (cur_bucket.header.ref_count == 0) {
-            bucket_mapping.erase(bucket_mapping.find(cur_bucket.header.bucket_id));
-            flush(cur_bucket);
-            return i;
+            if (buckets[clock_hand].header.ref_count == 0) {
+                bucket_mapping.erase(bucket_mapping.find(buckets[clock_hand].header.bucket_id));
+                flush(buckets[clock_hand]);
+                return clock_hand;
+            }
         }
+        clock_hand = (clock_hand + 1) % BUCKETS_IN_MEM;
     }
     // all buckets claimed
     assert(false);

@@ -31,7 +31,7 @@ private:
 
     size_t global_depth = 0;
 
-    Bucket* get_bucket(size_t hash);
+    Bucket &get_bucket(size_t hash);
 
     BucketManager bm;
 

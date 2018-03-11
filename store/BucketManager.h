@@ -17,22 +17,17 @@ public:
 
 
     BucketManager();
-
-
     Bucket& get(size_t bucket_id);
-
-
     void release(Bucket &bucket);
 
 private:
 
     void flush(Bucket &bucket);
-
     void load(size_t bucket_id, Bucket &bucket);
-
     unsigned evict();
 
     int file;
+    unsigned clock_hand = 0;
     unordered_map<size_t, unsigned> bucket_mapping;
     Bucket buckets[BUCKETS_IN_MEM];
 

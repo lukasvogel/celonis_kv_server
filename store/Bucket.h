@@ -29,6 +29,7 @@ public:
         size_t offset_end = 0;
 
     };
+    bool recently_used = false;
 
     Header header;
 
