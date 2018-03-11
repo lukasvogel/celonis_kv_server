@@ -27,24 +27,21 @@ Bucket &BucketManager::get(size_t bucket_id) {
     if (it == bucket_mapping.end()) {
 
         unsigned free_slot = evict();
-        Bucket &bucket = buckets[free_slot];
-        load(bucket);
-        bucket.status = 0x0;
-        bucket.bucket_id = bucket_id;
-        bucket_mapping.insert(pair<size_t, unsigned>(bucket_id, free_slot));
-        bucket.ref_count++;
+        load(bucket_id, buckets[free_slot]);
+        bucket_mapping[bucket_id] = free_slot;
+        buckets[free_slot].header.ref_count++;
         return buckets[free_slot];
     } else {
         unsigned pos = it->second;
         Bucket &bucket = buckets[pos];
-        bucket.ref_count++;
+        bucket.header.ref_count++;
         //TODO: lock
         return buckets[pos];
     }
 }
 
 void BucketManager::release(Bucket &bucket) {
-    bucket.ref_count--;
+    bucket.header.ref_count--;
     flush(bucket);
 }
 
@@ -54,7 +51,7 @@ unsigned BucketManager::evict() {
         for (unsigned i = 0; i < BUCKETS_IN_MEM; i++) {
             Bucket cur_bucket = buckets[i];
 
-            if (cur_bucket.status & Bucket::NEWLY_CREATED_MASK) {
+            if (cur_bucket.header.status & Bucket::NEWLY_CREATED_MASK) {
                 return i;
             }
         }
@@ -63,7 +60,8 @@ unsigned BucketManager::evict() {
     for (unsigned i = 0; i < BUCKETS_IN_MEM; i++) {
         Bucket cur_bucket = buckets[i];
 
-        if (cur_bucket.ref_count == 0) {
+        if (cur_bucket.header.ref_count == 0) {
+            bucket_mapping.erase(bucket_mapping.find(cur_bucket.header.bucket_id));
             flush(cur_bucket);
             return i;
         }
@@ -73,31 +71,64 @@ unsigned BucketManager::evict() {
 
 void BucketManager::flush(Bucket &bucket) {
 
-    if (pwrite(file, bucket.get_data(), Bucket::SIZE, bucket.bucket_id * Bucket::SIZE) == -1) {
+    size_t bucket_size = Bucket::SIZE + sizeof(Bucket::Header);
+    size_t bucket_offset = (bucket.header.bucket_id * bucket_size);
+
+
+    // write the header
+    if (pwrite(file, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
+        std::cerr << "cannot write bucket header: " << strerror(errno)
+                  << " Bucket: " << bucket.header.bucket_id
+                  << std::endl;
+    }
+
+
+    // write the data
+    if (pwrite(file, bucket.get_data(), Bucket::SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
         std::cerr << "cannot write bucket data: " << strerror(errno)
-                  << " Bucket: " << bucket.bucket_id
+                  << " Bucket: " << bucket.header.bucket_id
                   << std::endl;
     }
 }
 
-void BucketManager::load(Bucket &bucket) {
+void BucketManager::load(size_t bucket_id, Bucket &bucket) {
     struct stat statbuf;
     if (stat("storage.dat", &statbuf) == -1) {
         std::cerr << "cannot check input file stat " << strerror(errno)
                   << std::endl;
     }
     size_t file_size = statbuf.st_size;
+    size_t bucket_size = Bucket::SIZE + sizeof(Bucket::Header);
+    size_t bucket_offset = (bucket_id * bucket_size);
 
-    bool is_in_range = file_size >= (bucket.bucket_id + 1) * (Bucket::SIZE) - 1;
+    bool is_in_range = file_size >= (bucket_offset + bucket_size - 1);
+    cout << "filesize: " << file_size << endl;
 
     if (is_in_range) {
-        if (pread(file, bucket.get_data(), Bucket::SIZE, bucket.bucket_id * (Bucket::SIZE)) == -1) {
+        // We already have this bucket saved in the file, load it
+        cout << "loading bucket: " << bucket_id << endl;
+
+        // read the header
+        if (pread(file, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
+            std::cerr << "cannot read bucket header: " << strerror(errno)
+                      << " Bucket: " << bucket.header.bucket_id << std::endl;
+        }
+
+        // read the data
+        if (pread(file, bucket.get_data(), Bucket::SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
             std::cerr << "cannot read bucket data: " << strerror(errno)
-                      << " Bucket: " << bucket.bucket_id
+                      << " Bucket: " << bucket.header.bucket_id
                       << " contents: " << bucket.get_data() << std::endl;
         }
     } else {
+        // This bucket has never been requested before, create it
+        cout << "initializing bucket: " << bucket_id << endl;
         memset(bucket.get_data(), 0, Bucket::SIZE);
+        bucket.header.data_begin = Bucket::SIZE;
+        bucket.header.offset_end = 0;
+        bucket.header.bucket_id = bucket_id;
+        bucket.header.status = 0;
+        bucket.header.ref_count = 0;
     }
 }
 

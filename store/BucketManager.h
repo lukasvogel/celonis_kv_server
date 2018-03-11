@@ -29,7 +29,7 @@ private:
 
     void flush(Bucket &bucket);
 
-    void load(Bucket &bucket);
+    void load(size_t bucket_id, Bucket &bucket);
 
     unsigned evict();
 

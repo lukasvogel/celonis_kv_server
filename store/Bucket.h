@@ -20,19 +20,27 @@ public:
     static const uint16_t NEWLY_CREATED_MASK = 0x2;
 
 
+    struct Header {
+        size_t bucket_id = 0;
+        unsigned local_depth = 0;
+        unsigned ref_count = 0;
+        uint16_t status = 0;
+        size_t data_begin = SIZE;
+        size_t offset_end = 0;
+
+    };
+
+    Header header;
+
     explicit Bucket(size_t bucket_id) :
-        data_begin(SIZE),
-        offset_end(0),
-        bucket_id(),
-        status(0){
+            header() {
+        header.bucket_id = bucket_id;
         data = new char[Bucket::SIZE];
     }
 
     Bucket() :
-            data_begin(SIZE),
-            offset_end(0),
-            bucket_id(0),
-            status(NEWLY_CREATED_MASK){
+            header() {
+        header.status = NEWLY_CREATED_MASK;
         data = new char[Bucket::SIZE];
     }
 
@@ -47,23 +55,17 @@ public:
 
     void del(size_t hash, string key);
 
-    char* get_data();
+    char *get_data();
 
     // for debugging
     double get_usage();
 
 
-    size_t bucket_id;
-    int local_depth = 0;
-    unsigned ref_count = 0;
-    uint16_t status = 0;
-
 private:
-    size_t data_begin;
-    size_t offset_end;
+
     char *data;
 
-    bool find(size_t hash, string key, EntryPosition **position, EntryHeader **header);
+    bool find(size_t hash, string key, EntryPosition **position, EntryHeader **entry_header);
 
     void insert(size_t hash, string key, string value);
 };
