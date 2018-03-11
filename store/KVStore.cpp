@@ -61,9 +61,9 @@ bool KVStore::get(const string key, string *result) {
 
 void KVStore::del(string key) {
     size_t h = hash<string>()(key);
-    Bucket b = *get_bucket(h);
-    b.del(h, key);
-    bm.release(b);
+    Bucket *b = get_bucket(h);
+    b->del(h, key);
+    bm.release(*b);
 }
 
 Bucket *KVStore::get_bucket(size_t hash) {

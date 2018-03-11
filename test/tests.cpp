@@ -128,7 +128,7 @@ TEST(HashTable, FillingTablePromptsExtension) {
 TEST(HashTable, LotsOfExtensions) {
     KVStore store;
 
-    size_t NUM_ENTRIES = 500000;
+    size_t NUM_ENTRIES = 100000;
     int start_val = 100000;
     std::cout << "Entries: " << NUM_ENTRIES << endl;
 
@@ -137,7 +137,7 @@ TEST(HashTable, LotsOfExtensions) {
     }
 
     string value;
-    cout << "----DONE INSERTING, READING----";
+    cout << "----DONE INSERTING, READING----" << endl;
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
         value = "";
         EXPECT_TRUE(store.get(to_string(i), &value));
@@ -145,4 +145,29 @@ TEST(HashTable, LotsOfExtensions) {
     }
 }
 
+TEST(HashTable, LotsOfExtensionsWithDelete) {
+    KVStore store;
 
+    size_t NUM_ENTRIES = 200000;
+    int start_val = 100000;
+    std::cout << "Entries: " << NUM_ENTRIES << endl;
+
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
+        store.put(to_string(i), to_string(i));
+    }
+    cout << "----DONE INSERTING, DELETING----" << endl;
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i+=2) {
+        store.del(to_string(i));
+    }
+
+    string value;
+    cout << "----DONE DELETING, READING----" << endl;
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
+        if (i%2==0) {
+            EXPECT_FALSE(store.get(to_string(i), &value));
+        } else {
+            EXPECT_TRUE(store.get(to_string(i), &value));
+            EXPECT_EQ(value, to_string(i));
+        }
+    }
+}
