@@ -11,12 +11,12 @@ TEST(SimpleOperations, Insert) {
     // inserting and retrieving a key
     store.put("key", "value");
     string value;
-    store.get("key", &value);
+    store.get("key", value);
     EXPECT_EQ(value, "value");
 
     // variation with special characters
     store.put("KEY WITH SPACE ", "VALUE WITH SPACE");
-    store.get("KEY WITH SPACE ", &value);
+    store.get("KEY WITH SPACE ", value);
     EXPECT_EQ(value, "VALUE WITH SPACE");
 
 }
@@ -25,12 +25,12 @@ TEST(SimpleOperations, Delete) {
     KVStore store;
     store.put("key", "value");
     string value;
-    store.get("key", &value);
+    store.get("key", value);
     EXPECT_EQ(value, "value");
 
     store.del("key");
 
-    EXPECT_EQ(store.get("key", &value), false);
+    EXPECT_EQ(store.get("key", value), false);
 }
 
 TEST(SimpleOperations, Update) {
@@ -38,11 +38,11 @@ TEST(SimpleOperations, Update) {
     store.put("key", "value");
     store.put("key", "value2");
     string value;
-    store.get("key", &value);
+    store.get("key", value);
     EXPECT_EQ(value, "value2");
 
     store.put("key", "value");
-    store.get("key", &value);
+    store.get("key", value);
     EXPECT_EQ(value, "value");
 }
 
@@ -53,12 +53,12 @@ TEST(SimpleOperations, DeleteThenReinsert) {
 
     store.put("key", "value");
     string value;
-    store.get("key", &value);
+    store.get("key", value);
     EXPECT_EQ(value, "value");
 
     store.del("key");
     store.put("key", "value2");
-    store.get("key", &value);
+    store.get("key", value);
     EXPECT_EQ(value, "value2");
 }
 
@@ -78,7 +78,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
 
     string value;
     for (int i = 10000; i < 10000 + BUFFER_SIZE / ENTRY_SIZE; i++) {
-        store.get(to_string(i), &value);
+        store.get(to_string(i), value);
         EXPECT_EQ(value, to_string(i));
     }
 
@@ -86,7 +86,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
     // delete the first five elements to make space for compaction
     for (int i = 10000; i < 10005; i++) {
         store.del(to_string(i));
-        EXPECT_FALSE(store.get(to_string(i), &value));
+        EXPECT_FALSE(store.get(to_string(i), value));
     }
 
     // add another five elements - should trigger compaction but fit
@@ -96,7 +96,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
 
     for (int i = 10000; i < 10005; i++) {
         value = "0";
-        store.get(to_string(i), &value);
+        store.get(to_string(i), value);
         EXPECT_EQ(value, to_string(i));
     }
 
@@ -120,7 +120,7 @@ TEST(HashTable, FillingTablePromptsExtension) {
 
     string value;
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
-        EXPECT_TRUE(store.get(to_string(i), &value));
+        EXPECT_TRUE(store.get(to_string(i), value));
         EXPECT_EQ(value, to_string(i));
     }
 }
@@ -140,7 +140,7 @@ TEST(HashTable, LotsOfExtensions) {
     cout << "----DONE INSERTING, READING----" << endl;
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
         value = "";
-        EXPECT_TRUE(store.get(to_string(i), &value));
+        EXPECT_TRUE(store.get(to_string(i), value));
         EXPECT_EQ(value, to_string(i));
     }
 }
@@ -164,10 +164,19 @@ TEST(HashTable, LotsOfExtensionsWithDelete) {
     cout << "----DONE DELETING, READING----" << endl;
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
         if (i%2==0) {
-            EXPECT_FALSE(store.get(to_string(i), &value));
+            EXPECT_FALSE(store.get(to_string(i), value));
         } else {
-            EXPECT_TRUE(store.get(to_string(i), &value));
+            EXPECT_TRUE(store.get(to_string(i), value));
             EXPECT_EQ(value, to_string(i));
         }
     }
+}
+
+TEST(Multithreading, TwoThreadsReading) {
+
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

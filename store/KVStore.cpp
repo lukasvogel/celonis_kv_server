@@ -12,14 +12,14 @@ void KVStore::put(const string key, const string value) {
     Bucket &b = get_bucket(h);
 
     if (b.put(h, key, value)) {
+        // Normal insert worked, we're done here!
         bm.release(b);
         return;
     } else {
         // insert failed, bucket is full, we have to split
-
         if (b.header.local_depth == global_depth) {
 
-            // double the size of the table
+            // To increment global depth, we double the table and references
             unsigned long size = pages.size();
             for (int i = 0; i < size; i++) {
                 pages.push_back(pages[i]);
@@ -34,7 +34,7 @@ void KVStore::put(const string key, const string value) {
             b.split(global_depth, b2);
             bm.release(b2);
 
-            // Put new bucket into index
+            // Put new bucket into duplicated position in the index
             for (int i = 0; i < pages.size(); i++) {
                 if (pages[i] == b.header.bucket_id) {
                     if (((i >> b.header.local_depth-1) & 1) == 1) {
@@ -43,15 +43,13 @@ void KVStore::put(const string key, const string value) {
                 }
             }
         }
-
-        //print_table_layout();
-
+        // Since we didn't have space for our value, rerun insertion into now splitt
         bm.release(b);
         put(key, value);
     }
 }
 
-bool KVStore::get(const string key, string *result) {
+bool KVStore::get(const string key, string &result) {
     size_t h = hash<string>()(key);
     Bucket &b = get_bucket(h);
     bool status = b.get(h, key, result);

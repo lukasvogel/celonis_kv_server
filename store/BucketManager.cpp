@@ -75,8 +75,6 @@ unsigned BucketManager::evict() {
         }
         clock_hand = (clock_hand + 1) % BUCKETS_IN_MEM;
     }
-    // all buckets claimed
-    assert(false);
 }
 
 
@@ -130,7 +128,7 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
                       << " contents: " << bucket.get_data() << std::endl;
         }
     } else {
-        // This bucket has never been requested before, create it
+        // This bucket has never been requested before, initialize it
         memset(bucket.get_data(), 0, BUCKET_SIZE);
         bucket.header.data_begin = BUCKET_SIZE;
         bucket.header.offset_end = 0;

@@ -52,7 +52,7 @@ public:
 
     bool put(size_t hash, string key, string value);
 
-    bool get(size_t hash, string key, string *result);
+    bool get(size_t hash, string key, string &result);
 
     void del(size_t hash, string key);
 
@@ -66,7 +66,7 @@ private:
 
     char *data;
 
-    bool find(size_t hash, string key, EntryPosition **position, EntryHeader **entry_header);
+    bool find(size_t hash, string key, EntryPosition *&position, EntryHeader *&entry_header);
 
     void insert(size_t hash, string key, string value);
 };

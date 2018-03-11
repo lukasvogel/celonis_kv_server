@@ -21,7 +21,7 @@ public:
 
     void put(string key, string value);
 
-    bool get(string key, string *result);
+    bool get(string key, string &result);
 
     void del(string key);
 
