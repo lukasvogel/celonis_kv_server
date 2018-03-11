@@ -25,6 +25,8 @@ public:
 
     void del(string key);
 
+    //debug
+    void print_table_layout();
 private:
 
     size_t global_depth = 0;

@@ -131,7 +131,7 @@ TEST(HashTable, LotsOfExtensions) {
     size_t BUFFER_SIZE = Bucket::SIZE;
     size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
 
-    size_t NUM_ENTRIES = (BUFFER_SIZE / ENTRY_SIZE) * 4; //fills two pages
+    size_t NUM_ENTRIES = (BUFFER_SIZE / ENTRY_SIZE) * 10; //fills two pages
     int start_val = 10000;
     std::cout << "Entries: " << NUM_ENTRIES << endl;
 

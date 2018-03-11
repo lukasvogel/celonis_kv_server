@@ -163,7 +163,7 @@ void Bucket::split(size_t global_depth, Bucket &new_bucket) {
         auto *ep = reinterpret_cast<EntryPosition *>(this->data + ep_offset);
         auto hash_sig_part = ep->hash_code & ((1 << global_depth) - 1);
 
-        if (hash_sig_part >> local_depth != 0) {
+        if (((hash_sig_part >> local_depth) & 1) == 1) {
             // belongs into the new bucket, insert it there
             auto *eh = reinterpret_cast<EntryHeader *>(this->data + ep->offset);
             char *key = this->data + ep->offset + sizeof(EntryHeader);
