@@ -18,7 +18,6 @@ public:
 
     BucketManager();
 
-    static const size_t BUCKETS_IN_MEM = 10;
 
     Bucket& get(size_t bucket_id);
 

@@ -67,7 +67,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
 
     KVStore store;
 
-    size_t BUFFER_SIZE = Bucket::SIZE;
+    size_t BUFFER_SIZE = BUCKET_SIZE;
     size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
 
     std::cout << "Entries: " << BUFFER_SIZE / ENTRY_SIZE << endl;
@@ -107,7 +107,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
 TEST(HashTable, FillingTablePromptsExtension) {
     KVStore store;
 
-    size_t BUFFER_SIZE = Bucket::SIZE;
+    size_t BUFFER_SIZE = BUCKET_SIZE;
     size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
 
     size_t NUM_ENTRIES = (BUFFER_SIZE / ENTRY_SIZE) * 2; //fills two pages
@@ -128,11 +128,8 @@ TEST(HashTable, FillingTablePromptsExtension) {
 TEST(HashTable, LotsOfExtensions) {
     KVStore store;
 
-    size_t BUFFER_SIZE = Bucket::SIZE;
-    size_t ENTRY_SIZE = 2 * (sizeof(char) * 6) + sizeof(EntryPosition) + sizeof(EntryHeader);
-
-    size_t NUM_ENTRIES = (BUFFER_SIZE / ENTRY_SIZE) * 8; //fills two pages
-    int start_val = 10000;
+    size_t NUM_ENTRIES = 500000;
+    int start_val = 100000;
     std::cout << "Entries: " << NUM_ENTRIES << endl;
 
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
@@ -140,6 +137,7 @@ TEST(HashTable, LotsOfExtensions) {
     }
 
     string value;
+    cout << "----DONE INSERTING, READING----";
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
         value = "";
         EXPECT_TRUE(store.get(to_string(i), &value));

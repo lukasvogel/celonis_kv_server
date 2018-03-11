@@ -19,15 +19,15 @@ bool Bucket::put(size_t hash, string key, string value) {
         insert(hash, key, value);
     } else {
         // not enough space, first try compacting
-        cout << "compacting..." << endl;
-        cout << "usage before: " << get_usage() << endl;
+        //cout << "compacting..." << endl;
+        //cout << "usage before: " << get_usage() << endl;
         compact();
-        cout << "usage after: " << get_usage() << endl;
+        //cout << "usage after: " << get_usage() << endl;
 
         // retry insertion
         free_space = (header.data_begin - header.offset_end);
         if (free_space >= entry_size + sizeof(EntryPosition)) {
-            cout << "enough room for now..." << endl;
+            //cout << "enough room for now..." << endl;
             // we have enough room, write the data
             insert(hash, key, value);
         } else {
@@ -113,7 +113,7 @@ void Bucket::compact() {
     size_t read_ep = 0;
     size_t write_ep = 0;
 
-    size_t write_entry = SIZE;
+    size_t write_entry = BUCKET_SIZE;
 
 
     while (read_ep < header.offset_end) {
@@ -153,7 +153,7 @@ void Bucket::compact() {
 }
 
 double Bucket::get_usage() {
-    return 1 - (header.data_begin - header.offset_end) / (SIZE * 1.0);
+    return 1 - (header.data_begin - header.offset_end) / (BUCKET_SIZE * 1.0);
 }
 
 void Bucket::split(size_t global_depth, Bucket &new_bucket) {

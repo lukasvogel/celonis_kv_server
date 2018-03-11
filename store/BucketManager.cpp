@@ -14,6 +14,7 @@
 #include <bits/stat.h>
 #include <cstdio>
 #include <fcntl.h>
+#include <cassert>
 
 
 BucketManager::BucketManager() {
@@ -38,16 +39,18 @@ Bucket &BucketManager::get(size_t bucket_id) {
         //TODO: lock
         return buckets[pos];
     }
+
 }
 
 void BucketManager::release(Bucket &bucket) {
     bucket.header.ref_count--;
-    flush(bucket);
 }
 
 unsigned BucketManager::evict() {
-    //first look if we still have unclaimed pages
+    //first look if we still have unclaimed space in memory
     if (bucket_mapping.size() < BUCKETS_IN_MEM) {
+
+        //no need to evict, just grab the first free page
         for (unsigned i = 0; i < BUCKETS_IN_MEM; i++) {
             Bucket cur_bucket = buckets[i];
 
@@ -66,12 +69,14 @@ unsigned BucketManager::evict() {
             return i;
         }
     }
+    // all buckets claimed
+    assert(false);
 }
 
 
 void BucketManager::flush(Bucket &bucket) {
 
-    size_t bucket_size = Bucket::SIZE + sizeof(Bucket::Header);
+    size_t bucket_size = BUCKET_SIZE + sizeof(Bucket::Header);
     size_t bucket_offset = (bucket.header.bucket_id * bucket_size);
 
 
@@ -84,7 +89,7 @@ void BucketManager::flush(Bucket &bucket) {
 
 
     // write the data
-    if (pwrite(file, bucket.get_data(), Bucket::SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
+    if (pwrite(file, bucket.get_data(), BUCKET_SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
         std::cerr << "cannot write bucket data: " << strerror(errno)
                   << " Bucket: " << bucket.header.bucket_id
                   << std::endl;
@@ -98,15 +103,13 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
                   << std::endl;
     }
     size_t file_size = statbuf.st_size;
-    size_t bucket_size = Bucket::SIZE + sizeof(Bucket::Header);
+    size_t bucket_size = BUCKET_SIZE + sizeof(Bucket::Header);
     size_t bucket_offset = (bucket_id * bucket_size);
 
     bool is_in_range = file_size >= (bucket_offset + bucket_size - 1);
-    cout << "filesize: " << file_size << endl;
 
     if (is_in_range) {
         // We already have this bucket saved in the file, load it
-        cout << "loading bucket: " << bucket_id << endl;
 
         // read the header
         if (pread(file, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
@@ -115,16 +118,15 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
         }
 
         // read the data
-        if (pread(file, bucket.get_data(), Bucket::SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
+        if (pread(file, bucket.get_data(), BUCKET_SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
             std::cerr << "cannot read bucket data: " << strerror(errno)
                       << " Bucket: " << bucket.header.bucket_id
                       << " contents: " << bucket.get_data() << std::endl;
         }
     } else {
         // This bucket has never been requested before, create it
-        cout << "initializing bucket: " << bucket_id << endl;
-        memset(bucket.get_data(), 0, Bucket::SIZE);
-        bucket.header.data_begin = Bucket::SIZE;
+        memset(bucket.get_data(), 0, BUCKET_SIZE);
+        bucket.header.data_begin = BUCKET_SIZE;
         bucket.header.offset_end = 0;
         bucket.header.bucket_id = bucket_id;
         bucket.header.status = 0;

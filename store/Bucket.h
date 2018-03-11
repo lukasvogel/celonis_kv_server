@@ -11,11 +11,11 @@
 #include <stdint-gcc.h>
 #include "EntryPosition.h"
 #include "EntryHeader.h"
+#include "../Consts.h"
 
 class Bucket {
 
 public:
-    static const size_t SIZE = 1024;
     static const uint16_t DIRTY_MASK = 0x1;
     static const uint16_t NEWLY_CREATED_MASK = 0x2;
 
@@ -25,7 +25,7 @@ public:
         unsigned local_depth = 0;
         unsigned ref_count = 0;
         uint16_t status = 0;
-        size_t data_begin = SIZE;
+        size_t data_begin = BUCKET_SIZE;
         size_t offset_end = 0;
 
     };
@@ -35,13 +35,13 @@ public:
     explicit Bucket(size_t bucket_id) :
             header() {
         header.bucket_id = bucket_id;
-        data = new char[Bucket::SIZE];
+        data = new char[BUCKET_SIZE];
     }
 
     Bucket() :
             header() {
         header.status = NEWLY_CREATED_MASK;
-        data = new char[Bucket::SIZE];
+        data = new char[BUCKET_SIZE];
     }
 
 

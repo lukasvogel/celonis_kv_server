@@ -18,7 +18,6 @@ void KVStore::put(const string key, const string value) {
         // insert failed, bucket is full, we have to split
 
         if (b->header.local_depth == global_depth) {
-            cout << "Incrementing global depth" << endl;
 
             // double the size of the table
             unsigned long size = pages.size();
@@ -29,8 +28,6 @@ void KVStore::put(const string key, const string value) {
         }
 
         if (b->header.local_depth < global_depth) {
-            cout << "Incrementing local depth of: " << b->header.bucket_id << endl;
-            cout << "Splitting because of: " << key << endl;
 
             // split bucket into two
             Bucket *b2 = &bm.get(++max_bucket_no);
@@ -47,7 +44,7 @@ void KVStore::put(const string key, const string value) {
             }
         }
 
-        print_table_layout();
+        //print_table_layout();
 
         bm.release(*b);
         put(key, value);
@@ -56,9 +53,9 @@ void KVStore::put(const string key, const string value) {
 
 bool KVStore::get(const string key, string *result) {
     size_t h = hash<string>()(key);
-    Bucket b = *get_bucket(h);
-    bool status = b.get(h, key, result);
-    bm.release(b);
+    Bucket *b = get_bucket(h);
+    bool status = b->get(h, key, result);
+    bm.release(*b);
     return status;
 }
 
