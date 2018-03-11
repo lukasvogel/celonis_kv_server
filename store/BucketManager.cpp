@@ -21,8 +21,9 @@ BucketManager::BucketManager() {
     file = open("storage.dat", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 }
 
-Bucket &BucketManager::get(size_t bucket_id) {
+Bucket &BucketManager::get(size_t bucket_id, bool exclusive) {
 
+    mapping_mutex.lock();
     auto it = bucket_mapping.find(bucket_id);
 
     if (it == bucket_mapping.end()) {
@@ -32,21 +33,36 @@ Bucket &BucketManager::get(size_t bucket_id) {
 
         Bucket &bucket = buckets[free_slot];
         load(bucket_id, bucket);
-        bucket.header.ref_count++;
+        mapping_mutex.unlock();
+        if(exclusive)
+            pthread_rwlock_wrlock(&bucket.rw_lock);
+        else
+            pthread_rwlock_rdlock(&bucket.rw_lock);
+
+        bucket.ref_count++;
         bucket.recently_used = true;
         return bucket;
     } else {
+        // found the bucket in memory!
         unsigned pos = it->second;
         Bucket &bucket = buckets[pos];
-        bucket.header.ref_count++;
+        mapping_mutex.unlock();
+        if(exclusive)
+            pthread_rwlock_wrlock(&bucket.rw_lock);
+        else
+            pthread_rwlock_rdlock(&bucket.rw_lock);
+
+        bucket.ref_count++;
         bucket.recently_used = true;
+
         return bucket;
     }
 
 }
 
 void BucketManager::release(Bucket &bucket) {
-    bucket.header.ref_count--;
+    bucket.ref_count--;
+    pthread_rwlock_unlock(&bucket.rw_lock);
 }
 
 unsigned BucketManager::evict() {
@@ -67,7 +83,7 @@ unsigned BucketManager::evict() {
         if (buckets[clock_hand].recently_used) {
             buckets[clock_hand].recently_used = false;
 
-            if (buckets[clock_hand].header.ref_count == 0) {
+            if (buckets[clock_hand].ref_count == 0) {
                 bucket_mapping.erase(bucket_mapping.find(buckets[clock_hand].header.bucket_id));
                 flush(buckets[clock_hand]);
                 return clock_hand;
@@ -134,7 +150,7 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
         bucket.header.offset_end = 0;
         bucket.header.bucket_id = bucket_id;
         bucket.header.status = 0;
-        bucket.header.ref_count = 0;
+        bucket.ref_count = 0;
     }
 }
 

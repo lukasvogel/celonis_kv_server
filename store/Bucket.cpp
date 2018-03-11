@@ -149,7 +149,7 @@ double Bucket::get_usage() {
     return 1 - (header.data_begin - header.offset_end) / (BUCKET_SIZE * 1.0);
 }
 
-void Bucket::split(size_t global_depth, Bucket &new_bucket) {
+void Bucket::split(size_t global_depth, Bucket &new_bucket, size_t hash_to_insert, string key_to_insert, string value_to_insert) {
     size_t ep_offset = 0;
     // Iterate through all entries
     while (ep_offset < header.offset_end) {
@@ -169,12 +169,20 @@ void Bucket::split(size_t global_depth, Bucket &new_bucket) {
         ep_offset += sizeof(EntryPosition);
     }
 
-    // all other entries stay here, compact them
     compact();
+    auto hash_sig_part = hash_to_insert & ((1 << global_depth) - 1);
+    if (((hash_sig_part >> header.local_depth) & 1) == 1) {
+        new_bucket.insert(hash_to_insert, key_to_insert, value_to_insert);
+    } else {
+        insert(hash_to_insert, key_to_insert, value_to_insert);
+    }
+
+    // all other entries stay here, compact them
 
     // update depths
     header.local_depth += 1;
     new_bucket.header.local_depth = header.local_depth;
+
 }
 
 char *Bucket::get_data() {

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 #include "Bucket.h"
 
 class BucketManager {
@@ -17,7 +18,8 @@ public:
 
 
     BucketManager();
-    Bucket& get(size_t bucket_id);
+
+    Bucket& get(size_t bucket_id, bool exclusive);
     void release(Bucket &bucket);
 
 private:
@@ -29,6 +31,7 @@ private:
     int file;
     unsigned clock_hand = 0;
     unordered_map<size_t, unsigned> bucket_mapping;
+    mutex mapping_mutex;
     Bucket buckets[BUCKETS_IN_MEM];
 
 };

@@ -3,6 +3,7 @@
 //
 #include "../store/KVStore.h"
 #include <climits>
+#include <thread>
 #include "gtest/gtest.h"
 
 
@@ -156,14 +157,14 @@ TEST(HashTable, LotsOfExtensionsWithDelete) {
         store.put(to_string(i), to_string(i));
     }
     cout << "----DONE INSERTING, DELETING----" << endl;
-    for (int i = start_val; i < start_val + NUM_ENTRIES; i+=2) {
+    for (int i = start_val; i < start_val + NUM_ENTRIES; i += 2) {
         store.del(to_string(i));
     }
 
     string value;
     cout << "----DONE DELETING, READING----" << endl;
     for (int i = start_val; i < start_val + NUM_ENTRIES; i++) {
-        if (i%2==0) {
+        if (i % 2 == 0) {
             EXPECT_FALSE(store.get(to_string(i), value));
         } else {
             EXPECT_TRUE(store.get(to_string(i), value));
@@ -172,9 +173,132 @@ TEST(HashTable, LotsOfExtensionsWithDelete) {
     }
 }
 
-TEST(Multithreading, TwoThreadsReading) {
+
+void *read_the_key(void *store_ptr) {
+    KVStore *store = (KVStore*)store_ptr;
+    string value;
+
+    for (int i = 0; i < 100000; i++) {
+        store->get("the key",value);
+        EXPECT_EQ("the value", value);
+    }
+}
+
+TEST(Multithreading, MultipleThreadsReading) {
+
+    int NUM_THREADS = 100;
+
+    KVStore store;
+
+    store.put("the key", "the value");
+
+    pthread_t threads[NUM_THREADS];
+
+
+    pthread_attr_t pattr;
+    pthread_attr_init(&pattr);
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], &pattr, read_the_key, &store);
+    }
+
+    void *ret;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], &ret);
+    }
+    string value;
+    store.get("the key",value);
+    EXPECT_EQ("the value", value);
+}
+
+void *write_stuff(void *store_ptr) {
+    KVStore *store = (KVStore*)store_ptr;
+    string value;
+
+    for (int i = 0; i < 100000; i++) {
+        store->put("some rubbish key", "some rubbish key");
+    }
+}
+
+
+TEST(Multithreading, MultipleReadingMultipleWriting) {
+
+    int NUM_WRITERS = 100;
+    int NUM_READERS = 100;
+
+    KVStore store;
+
+    store.put("the key", "the value");
+
+    pthread_t writers[NUM_WRITERS];
+    pthread_t readers[NUM_READERS];
+
+
+    pthread_attr_t pattr;
+    pthread_attr_init(&pattr);
+
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        pthread_create(&writers[i], &pattr, write_stuff, &store);
+    }
+
+    for (int i = 0; i < NUM_READERS; i++) {
+        pthread_create(&readers[i], &pattr, read_the_key, &store);
+    }
+
+
+    void *ret;
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        pthread_join(writers[i], &ret);
+    }
+
+    for (int i = 0; i < NUM_READERS; i++) {
+        pthread_join(readers[i], &ret);
+    }
+
+    string value;
+    store.get("the key",value);
+    EXPECT_EQ("the value", value);
 
 }
+
+void *write_sequence(KVStore &store, int start, int num_elems ) {
+
+    for (int i = start; i < start + num_elems; i++) {
+        store.put(to_string(i), to_string(i));
+    }
+}
+
+TEST(Multithreading, MultipleWritingSequence) {
+
+    int NUM_WRITERS = 100;
+
+    int WRITES_PER_THREAD = 10000;
+
+
+    KVStore store;
+
+    thread writers[NUM_WRITERS];
+
+
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        writers[i] = std::thread (write_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
+    }
+
+
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        writers[i].join();
+    }
+
+    for (int i = 0; i < NUM_WRITERS * WRITES_PER_THREAD; i++) {
+        string value;
+        EXPECT_TRUE(store.get(to_string(i),value));
+        EXPECT_EQ(to_string(i),value);
+
+    }
+}
+
+
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

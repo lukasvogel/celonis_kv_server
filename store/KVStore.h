@@ -31,13 +31,13 @@ private:
 
     size_t global_depth = 0;
 
-    Bucket &get_bucket(size_t hash);
+    Bucket &get_bucket(size_t hash, bool exclusive);
 
     BucketManager bm;
 
     vector<size_t> pages;
     size_t max_bucket_no = 0;
-
+    pthread_rwlock_t hashtable_lock;
 
 };
 
