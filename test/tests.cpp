@@ -79,6 +79,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
 
     string value;
     for (int i = 10000; i < 10000 + BUFFER_SIZE / ENTRY_SIZE; i++) {
+        value = "";
         store.get(to_string(i), value);
         EXPECT_EQ(value, to_string(i));
     }
@@ -175,11 +176,11 @@ TEST(HashTable, LotsOfExtensionsWithDelete) {
 
 
 void *read_the_key(void *store_ptr) {
-    KVStore *store = (KVStore*)store_ptr;
+    KVStore *store = (KVStore *) store_ptr;
     string value;
 
     for (int i = 0; i < 100000; i++) {
-        store->get("the key",value);
+        store->get("the key", value);
         EXPECT_EQ("the value", value);
     }
 }
@@ -207,12 +208,12 @@ TEST(Multithreading, MultipleThreadsReading) {
         pthread_join(threads[i], &ret);
     }
     string value;
-    store.get("the key",value);
+    store.get("the key", value);
     EXPECT_EQ("the value", value);
 }
 
 void *write_stuff(void *store_ptr) {
-    KVStore *store = (KVStore*)store_ptr;
+    KVStore *store = (KVStore *) store_ptr;
     string value;
 
     for (int i = 0; i < 100000; i++) {
@@ -256,7 +257,7 @@ TEST(Multithreading, MultipleReadingMultipleWriting) {
     }
 
     string value;
-    store.get("the key",value);
+    store.get("the key", value);
     EXPECT_EQ("the value", value);
 
 }
@@ -268,36 +269,78 @@ void *write_sequence(KVStore &store, int start, int num_elems ) {
     }
 }
 
-TEST(Multithreading, MultipleWritingSequence) {
-
-    int NUM_WRITERS = 100;
-
-    int WRITES_PER_THREAD = 10000;
-
-
-    KVStore store;
-
-    thread writers[NUM_WRITERS];
-
-
-    for (int i = 0; i < NUM_WRITERS; i++) {
-        writers[i] = std::thread (write_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
+void *del_sequence(KVStore &store, int start, int num_elems, int step) {
+    for (int i = start; i < start + step * num_elems; i += step) {
+        store.del(to_string(i));
     }
+}
 
-
-    for (int i = 0; i < NUM_WRITERS; i++) {
-        writers[i].join();
-    }
-
-    for (int i = 0; i < NUM_WRITERS * WRITES_PER_THREAD; i++) {
-        string value;
-        EXPECT_TRUE(store.get(to_string(i),value));
-        EXPECT_EQ(to_string(i),value);
-
+void *get_sequence(KVStore &store, int start, int num_elems) {
+    string result;
+    for (int i = start; i < start + num_elems; i++) {
+        store.get(to_string(i),result);
     }
 }
 
 
+TEST(Multithreading, MultipleWritingSequence) {
+
+    int NUM_WRITERS = 100;
+
+    int WRITES_PER_THREAD = 1000;
+    KVStore store;
+
+    thread writers[NUM_WRITERS];
+
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        writers[i] = std::thread(write_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
+    }
+    for (int i = 0; i < NUM_WRITERS; i++) {
+        writers[i].join();
+    }
+    for (int i = 0; i < NUM_WRITERS * WRITES_PER_THREAD; i++) {
+        string value;
+        EXPECT_TRUE(store.get(to_string(i), value));
+        EXPECT_EQ(to_string(i), value);
+    }
+}
+
+
+TEST(Multithreading, PerformanceTest) {
+    KVStore store;
+
+    int NUM_THREADS = 1;
+    int NUM_ENTRIES = 200000;
+    int WRITES_PER_THREAD = NUM_ENTRIES / NUM_THREADS;
+
+    thread threads[NUM_THREADS];
+
+    std::cout << "Entries: " << NUM_ENTRIES << endl;
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threads[i] = std::thread(write_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
+    }
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threads[i].join();
+    }
+
+    cout << "----DONE INSERTING, DELETING----" << endl;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threads[i] = std::thread(del_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD/2, 2);
+    }
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threads[i].join();
+    }
+
+    string value;
+    cout << "----DONE DELETING, READING----" << endl;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threads[i] = std::thread(get_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
+    }
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threads[i].join();
+    }
+}
 
 
 int main(int argc, char **argv) {

@@ -18,6 +18,7 @@
 
 
 BucketManager::BucketManager() {
+    remove("storage.dat");
     file = open("storage.dat", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 }
 
@@ -30,10 +31,11 @@ Bucket &BucketManager::get(size_t bucket_id, bool exclusive) {
 
         unsigned free_slot = evict();
         bucket_mapping[bucket_id] = free_slot;
-
         Bucket &bucket = buckets[free_slot];
-        load(bucket_id, bucket);
+        bucket.ref_count++; //Allows us to unlock the mutex as it can't be evicted now. Will be overwritten later anyway
         mapping_mutex.unlock();
+
+        load(bucket_id, bucket);
         if(exclusive)
             pthread_rwlock_wrlock(&bucket.rw_lock);
         else
@@ -46,14 +48,14 @@ Bucket &BucketManager::get(size_t bucket_id, bool exclusive) {
         // found the bucket in memory!
         unsigned pos = it->second;
         Bucket &bucket = buckets[pos];
+        bucket.ref_count++;
+        bucket.recently_used = true;
         mapping_mutex.unlock();
         if(exclusive)
             pthread_rwlock_wrlock(&bucket.rw_lock);
         else
             pthread_rwlock_rdlock(&bucket.rw_lock);
 
-        bucket.ref_count++;
-        bucket.recently_used = true;
 
         return bucket;
     }
@@ -152,5 +154,9 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
         bucket.header.status = 0;
         bucket.ref_count = 0;
     }
+}
+
+BucketManager::~BucketManager() {
+    close(file);
 }
 

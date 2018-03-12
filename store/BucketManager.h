@@ -19,6 +19,8 @@ public:
 
     BucketManager();
 
+    ~BucketManager();
+
     Bucket& get(size_t bucket_id, bool exclusive);
     void release(Bucket &bucket);
 
