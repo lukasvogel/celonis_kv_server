@@ -19,24 +19,31 @@ public:
 
     KVStore();
 
+    ~KVStore();
+
     void put(string key, string value);
 
     bool get(string key, string &result);
 
     void del(string key);
 
+    void flush();
+
+
     //debug
     void print_table_layout();
 private:
 
-    size_t global_depth = 0;
-
     Bucket &get_bucket(size_t hash, bool exclusive);
 
-    BucketManager bm;
 
-    vector<size_t> pages;
+    int index_file_fd;
+    size_t global_depth = 0;
     size_t max_bucket_no = 0;
+
+    BucketManager bm;
+    vector<size_t> buckets;
+
     pthread_rwlock_t hashtable_lock;
 
 };

@@ -27,6 +27,7 @@ void Endpoint::setup_routes() {
     Routes::Get(router, "/kv/:key", Routes::bind(&Endpoint::handle_get, this));
     Routes::Put(router, "/kv/:key", Routes::bind(&Endpoint::handle_put, this));
     Routes::Delete(router, "/kv/:key", Routes::bind(&Endpoint::handle_delete, this));
+    Routes::Get(router, "/control/stop", Routes::bind(&Endpoint::handle_stop, this));
 
 }
 
@@ -51,4 +52,11 @@ void Endpoint::handle_delete(const Rest::Request &request, Http::ResponseWriter 
     string key = request.param(":key").as<std::string>();
     store.del(key);
     response.send(Http::Code::Ok);
+}
+
+void Endpoint::handle_stop(const Rest::Request &request, Http::ResponseWriter response) {
+    store.flush();
+    response.send(Http::Code::Ok);
+    shutdown();
+    exit(1);
 }

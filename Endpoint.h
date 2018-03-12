@@ -39,6 +39,9 @@ private:
     void handle_get(const Rest::Request& request, Http::ResponseWriter response);
 
     void handle_delete(const Rest::Request& request, Http::ResponseWriter response);
+
+    void handle_stop(const Rest::Request& request, Http::ResponseWriter response);
+
 };
 
 

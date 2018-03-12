@@ -18,8 +18,7 @@
 
 
 BucketManager::BucketManager() {
-    remove("storage.dat");
-    file = open("storage.dat", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    page_file_fd = open(PAGE_FILE, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 }
 
 Bucket &BucketManager::get(size_t bucket_id, bool exclusive) {
@@ -32,17 +31,19 @@ Bucket &BucketManager::get(size_t bucket_id, bool exclusive) {
         unsigned free_slot = evict();
         bucket_mapping[bucket_id] = free_slot;
         Bucket &bucket = buckets[free_slot];
+
         bucket.ref_count++; //Allows us to unlock the mutex as it can't be evicted now. Will be overwritten later anyway
         mapping_mutex.unlock();
 
         load(bucket_id, bucket);
+
         if(exclusive)
             pthread_rwlock_wrlock(&bucket.rw_lock);
         else
             pthread_rwlock_rdlock(&bucket.rw_lock);
 
-        bucket.ref_count++;
         bucket.recently_used = true;
+
         return bucket;
     } else {
         // found the bucket in memory!
@@ -51,6 +52,7 @@ Bucket &BucketManager::get(size_t bucket_id, bool exclusive) {
         bucket.ref_count++;
         bucket.recently_used = true;
         mapping_mutex.unlock();
+
         if(exclusive)
             pthread_rwlock_wrlock(&bucket.rw_lock);
         else
@@ -103,7 +105,7 @@ void BucketManager::flush(Bucket &bucket) {
 
 
     // write the header
-    if (pwrite(file, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
+    if (pwrite(page_file_fd, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
         std::cerr << "cannot write bucket header: " << strerror(errno)
                   << " Bucket: " << bucket.header.bucket_id
                   << std::endl;
@@ -111,7 +113,7 @@ void BucketManager::flush(Bucket &bucket) {
 
 
     // write the data
-    if (pwrite(file, bucket.get_data(), BUCKET_SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
+    if (pwrite(page_file_fd, bucket.get_data(), BUCKET_SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
         std::cerr << "cannot write bucket data: " << strerror(errno)
                   << " Bucket: " << bucket.header.bucket_id
                   << std::endl;
@@ -134,17 +136,19 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
         // We already have this bucket saved in the file, load it
 
         // read the header
-        if (pread(file, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
+        if (pread(page_file_fd, &bucket.header, sizeof(Bucket::Header), bucket_offset) == -1) {
             std::cerr << "cannot read bucket header: " << strerror(errno)
                       << " Bucket: " << bucket.header.bucket_id << std::endl;
         }
 
         // read the data
-        if (pread(file, bucket.get_data(), BUCKET_SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
+        if (pread(page_file_fd, bucket.get_data(), BUCKET_SIZE, bucket_offset + sizeof(Bucket::Header)) == -1) {
             std::cerr << "cannot read bucket data: " << strerror(errno)
                       << " Bucket: " << bucket.header.bucket_id
                       << " contents: " << bucket.get_data() << std::endl;
         }
+
+        bucket.ref_count = 1;
     } else {
         // This bucket has never been requested before, initialize it
         memset(bucket.get_data(), 0, BUCKET_SIZE);
@@ -152,11 +156,20 @@ void BucketManager::load(size_t bucket_id, Bucket &bucket) {
         bucket.header.offset_end = 0;
         bucket.header.bucket_id = bucket_id;
         bucket.header.status = 0;
-        bucket.ref_count = 0;
+        bucket.ref_count = 1;
     }
 }
 
 BucketManager::~BucketManager() {
-    close(file);
+    flush_all();
+    close(page_file_fd);
+}
+
+void BucketManager::flush_all() {
+    for (auto &bucket : buckets) {
+        if (!(bucket.header.status & Bucket::NEWLY_CREATED_MASK)) {
+            flush(bucket);
+        }
+    }
 }
 

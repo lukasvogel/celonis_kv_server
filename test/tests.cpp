@@ -5,7 +5,13 @@
 #include <climits>
 #include <thread>
 #include "gtest/gtest.h"
+#include <chrono>
+typedef std::chrono::high_resolution_clock Clock;
 
+void cleanup() {
+    remove(PAGE_FILE);
+    remove(INDEX_FILE);
+}
 
 TEST(SimpleOperations, Insert) {
     KVStore store;
@@ -19,10 +25,11 @@ TEST(SimpleOperations, Insert) {
     store.put("KEY WITH SPACE ", "VALUE WITH SPACE");
     store.get("KEY WITH SPACE ", value);
     EXPECT_EQ(value, "VALUE WITH SPACE");
-
+    cleanup();
 }
 
 TEST(SimpleOperations, Delete) {
+
     KVStore store;
     store.put("key", "value");
     string value;
@@ -32,6 +39,7 @@ TEST(SimpleOperations, Delete) {
     store.del("key");
 
     EXPECT_EQ(store.get("key", value), false);
+    cleanup();
 }
 
 TEST(SimpleOperations, Update) {
@@ -45,6 +53,7 @@ TEST(SimpleOperations, Update) {
     store.put("key", "value");
     store.get("key", value);
     EXPECT_EQ(value, "value");
+    cleanup();
 }
 
 TEST(SimpleOperations, DeleteThenReinsert) {
@@ -61,6 +70,7 @@ TEST(SimpleOperations, DeleteThenReinsert) {
     store.put("key", "value2");
     store.get("key", value);
     EXPECT_EQ(value, "value2");
+    cleanup();
 }
 
 TEST(Packing, FillingBufferPromptsPacking) {
@@ -101,8 +111,7 @@ TEST(Packing, FillingBufferPromptsPacking) {
         store.get(to_string(i), value);
         EXPECT_EQ(value, to_string(i));
     }
-
-
+    cleanup();
 }
 
 
@@ -125,6 +134,7 @@ TEST(HashTable, FillingTablePromptsExtension) {
         EXPECT_TRUE(store.get(to_string(i), value));
         EXPECT_EQ(value, to_string(i));
     }
+    cleanup();
 }
 
 TEST(HashTable, LotsOfExtensions) {
@@ -145,6 +155,7 @@ TEST(HashTable, LotsOfExtensions) {
         EXPECT_TRUE(store.get(to_string(i), value));
         EXPECT_EQ(value, to_string(i));
     }
+    cleanup();
 }
 
 TEST(HashTable, LotsOfExtensionsWithDelete) {
@@ -172,6 +183,7 @@ TEST(HashTable, LotsOfExtensionsWithDelete) {
             EXPECT_EQ(value, to_string(i));
         }
     }
+    cleanup();
 }
 
 
@@ -210,6 +222,7 @@ TEST(Multithreading, MultipleThreadsReading) {
     string value;
     store.get("the key", value);
     EXPECT_EQ("the value", value);
+    cleanup();
 }
 
 void *write_stuff(void *store_ptr) {
@@ -259,7 +272,7 @@ TEST(Multithreading, MultipleReadingMultipleWriting) {
     string value;
     store.get("the key", value);
     EXPECT_EQ("the value", value);
-
+    cleanup();
 }
 
 void *write_sequence(KVStore &store, int start, int num_elems ) {
@@ -303,6 +316,7 @@ TEST(Multithreading, MultipleWritingSequence) {
         EXPECT_TRUE(store.get(to_string(i), value));
         EXPECT_EQ(to_string(i), value);
     }
+    cleanup();
 }
 
 
@@ -317,29 +331,51 @@ TEST(Multithreading, PerformanceTest) {
 
     std::cout << "Entries: " << NUM_ENTRIES << endl;
 
+    auto t1 = Clock::now();
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i] = std::thread(write_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
+    auto t2 = Clock::now();
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    std::cout << "Inserted " << NUM_ENTRIES << " entries in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " milliseconds -> " << (NUM_ENTRIES / milliseconds) * 1000 << " entries per second." << std::endl;
+
+
 
     cout << "----DONE INSERTING, DELETING----" << endl;
+    t1 = Clock::now();
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i] = std::thread(del_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD/2, 2);
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
+    t2 = Clock::now();
+    milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    std::cout << "Deleted " << NUM_ENTRIES/2 << " entries in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " milliseconds -> " << (NUM_ENTRIES / milliseconds) * 1000 << " entries per second." << std::endl;
 
     string value;
     cout << "----DONE DELETING, READING----" << endl;
+    t1 = Clock::now();
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i] = std::thread(get_sequence, ref(store), i * WRITES_PER_THREAD, WRITES_PER_THREAD);
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
+    t2 = Clock::now();
+    milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    std::cout << "Read " << NUM_ENTRIES << " entries in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " milliseconds -> " << (NUM_ENTRIES / milliseconds) * 1000 << " entries per second." << std::endl;
+    cleanup();
+
 }
 
 

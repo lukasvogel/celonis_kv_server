@@ -23,14 +23,15 @@ public:
 
     Bucket& get(size_t bucket_id, bool exclusive);
     void release(Bucket &bucket);
+    void flush(Bucket &bucket);
+    void flush_all();
 
 private:
 
-    void flush(Bucket &bucket);
     void load(size_t bucket_id, Bucket &bucket);
     unsigned evict();
 
-    int file;
+    int page_file_fd;
     unsigned clock_hand = 0;
     unordered_map<size_t, unsigned> bucket_mapping;
     mutex mapping_mutex;
