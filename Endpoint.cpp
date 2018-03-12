@@ -39,10 +39,9 @@ void Endpoint::handle_put(const Rest::Request &request, Http::ResponseWriter res
 void Endpoint::handle_get(const Rest::Request &request, Http::ResponseWriter response) {
     string key = request.param(":key").as<std::string>();
 
-    string value = store.get(key);
-    //TODO: handle not found case
-    if (value != "\0") {
-        response.send(Http::Code::Ok, store.get(key));
+    string value;
+    if(store.get(key,value)) {
+        response.send(Http::Code::Ok, value);
     } else {
         response.send(Http::Code::Not_Found);
     }
