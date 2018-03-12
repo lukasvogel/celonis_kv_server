@@ -10,24 +10,22 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
-#include "Bucket.h"
+#include "bucket/Bucket.h"
 
 class BucketManager {
 
 public:
 
-
     BucketManager();
-
     ~BucketManager();
 
     Bucket& get(size_t bucket_id, bool exclusive);
     void release(Bucket &bucket);
-    void flush(Bucket &bucket);
     void flush_all();
 
 private:
 
+    void flush(Bucket &bucket);
     void load(size_t bucket_id, Bucket &bucket);
     unsigned evict();
 
@@ -36,7 +34,6 @@ private:
     unordered_map<size_t, unsigned> bucket_mapping;
     mutex mapping_mutex;
     Bucket buckets[BUCKETS_IN_MEM];
-
 };
 
 

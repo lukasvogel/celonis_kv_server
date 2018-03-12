@@ -84,16 +84,15 @@ unsigned BucketManager::evict() {
     }
     // clock algorithm
     while (true) {
+        clock_hand = (clock_hand + 1) % BUCKETS_IN_MEM;
+
         if (buckets[clock_hand].recently_used) {
             buckets[clock_hand].recently_used = false;
-
-            if (buckets[clock_hand].ref_count == 0) {
-                bucket_mapping.erase(bucket_mapping.find(buckets[clock_hand].header.bucket_id));
-                flush(buckets[clock_hand]);
-                return clock_hand;
-            }
+        } else if (buckets[clock_hand].ref_count == 0) {
+            bucket_mapping.erase(bucket_mapping.find(buckets[clock_hand].header.bucket_id));
+            flush(buckets[clock_hand]);
+            return clock_hand;
         }
-        clock_hand = (clock_hand + 1) % BUCKETS_IN_MEM;
     }
 }
 
@@ -122,7 +121,7 @@ void BucketManager::flush(Bucket &bucket) {
 
 void BucketManager::load(size_t bucket_id, Bucket &bucket) {
     struct stat statbuf;
-    if (stat("storage.dat", &statbuf) == -1) {
+    if (stat(PAGE_FILE, &statbuf) == -1) {
         std::cerr << "cannot check input file stat " << strerror(errno)
                   << std::endl;
     }

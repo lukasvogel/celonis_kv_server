@@ -7,6 +7,7 @@
 
 void Endpoint::init()  {
     auto opts = Http::Endpoint::options();
+    opts.threads(4);
 
     http_endpoint->init(opts);
     setup_routes();
@@ -27,7 +28,7 @@ void Endpoint::setup_routes() {
     Routes::Get(router, "/kv/:key", Routes::bind(&Endpoint::handle_get, this));
     Routes::Put(router, "/kv/:key", Routes::bind(&Endpoint::handle_put, this));
     Routes::Delete(router, "/kv/:key", Routes::bind(&Endpoint::handle_delete, this));
-    Routes::Get(router, "/control/stop", Routes::bind(&Endpoint::handle_stop, this));
+    Routes::Post(router, "/control/stop", Routes::bind(&Endpoint::handle_stop, this));
 
 }
 

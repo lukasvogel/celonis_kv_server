@@ -12,7 +12,7 @@
 #include <atomic>
 #include "EntryPosition.h"
 #include "EntryHeader.h"
-#include "../Consts.h"
+#include "../../config/Consts.h"
 
 class Bucket {
 
