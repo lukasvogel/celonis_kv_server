@@ -7,8 +7,11 @@
 #ifndef CELONIS_KV_SERVER_CONSTS_H
 #define CELONIS_KV_SERVER_CONSTS_H
 
+
+
+
 static const size_t BUCKET_SIZE = 4 * 1024; // 4 kb
-static const size_t MAX_MEMORY = 10 * 1024 * 1024; // 1 mb;
+static const size_t MAX_MEMORY = 100 * 1024 * 1024; // 1 mb;
 static constexpr size_t BUCKETS_IN_MEM = MAX_MEMORY / BUCKET_SIZE;
 
 static const char* PAGE_FILE = "storage.dat";

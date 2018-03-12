@@ -17,9 +17,7 @@
 class Bucket {
 
 public:
-    static const uint16_t DIRTY_MASK = 0x1;
-    static const uint16_t NEWLY_CREATED_MASK = 0x2;
-
+    static const uint16_t NEWLY_CREATED_MASK = 0x1;
 
     struct Header {
         size_t bucket_id = 0;
@@ -47,11 +45,11 @@ public:
 
     void split(size_t global_depth, Bucket &new_bucket, size_t hash_to_insert, string key_to_insert, string value_to_insert);
 
-    bool put(size_t hash, string key, string value);
+    bool put(size_t hash, const string &key, const string &value);
 
-    bool get(size_t hash, string key, string &result);
+    bool get(size_t hash, const string &key, string &result);
 
-    void del(size_t hash, string key);
+    void del(size_t hash, const string &key);
 
     char *get_data();
 
@@ -64,9 +62,9 @@ private:
 
     char *data;
 
-    bool find(size_t hash, string key, EntryPosition *&position, EntryHeader *&entry_header);
+    bool find(size_t hash, const string &key, EntryPosition *&position, EntryHeader *&entry_header);
 
-    void insert(size_t hash, string key, string value);
+    void insert(size_t hash, const string &key, const string &value);
 };
 
 

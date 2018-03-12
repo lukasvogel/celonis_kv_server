@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void KVStore::put(const string key, const string value) {
+void KVStore::put(const string &key, const string &value) {
     size_t h = hash<string>()(key);
 
     pthread_rwlock_wrlock(&hashtable_lock);
@@ -57,7 +57,7 @@ void KVStore::put(const string key, const string value) {
     }
 }
 
-bool KVStore::get(const string key, string &result) {
+bool KVStore::get(const string &key, string &result) {
     size_t h = hash<string>()(key);
     pthread_rwlock_rdlock(&hashtable_lock);
     Bucket &b = get_bucket(h, false);
@@ -67,7 +67,7 @@ bool KVStore::get(const string key, string &result) {
     return status;
 }
 
-void KVStore::del(string key) {
+void KVStore::del(const string &key) {
     size_t h = hash<string>()(key);
     pthread_rwlock_rdlock(&hashtable_lock);
     Bucket &b = get_bucket(h, true);

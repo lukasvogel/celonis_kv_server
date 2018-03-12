@@ -21,11 +21,11 @@ public:
 
     ~KVStore();
 
-    void put(string key, string value);
+    void put(const string &key, const string &value);
 
-    bool get(string key, string &result);
+    bool get(const string &key, string &result);
 
-    void del(string key);
+    void del(const string &key);
 
     void flush();
 

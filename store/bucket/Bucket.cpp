@@ -4,7 +4,7 @@
 
 #include "Bucket.h"
 
-bool Bucket::put(size_t hash, string key, string value) {
+bool Bucket::put(size_t hash, const string &key, const string &value) {
     // first delete a potentially already existing entry (for update)
     del(hash, key);
 
@@ -33,7 +33,7 @@ bool Bucket::put(size_t hash, string key, string value) {
     return true;
 }
 
-bool Bucket::get(size_t hash, string key, string &result) {
+bool Bucket::get(size_t hash, const string &key, string &result) {
     EntryPosition *ep;
     EntryHeader *eh;
 
@@ -46,7 +46,7 @@ bool Bucket::get(size_t hash, string key, string &result) {
 
 }
 
-void Bucket::del(size_t hash, string key) {
+void Bucket::del(size_t hash, const string &key) {
     EntryPosition *ep;
     EntryHeader *eh;
 
@@ -55,7 +55,7 @@ void Bucket::del(size_t hash, string key) {
     }
 }
 
-bool Bucket::find(size_t hash, string key, EntryPosition *&position, EntryHeader *&entry_header) {
+bool Bucket::find(size_t hash, const string &key, EntryPosition *&position, EntryHeader *&entry_header) {
     // We iterate from the back so we do not look at deleted entries first
     size_t offset = header.offset_end;
 
@@ -85,7 +85,7 @@ bool Bucket::find(size_t hash, string key, EntryPosition *&position, EntryHeader
     return false;
 }
 
-void Bucket::insert(size_t hash, string key, string value) {
+void Bucket::insert(size_t hash, const string &key, const string &value) {
     // calculate all sizes required
     size_t key_size = key.size() + 1; // null termination
     size_t value_size = value.size() + 1;
