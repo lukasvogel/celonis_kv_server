@@ -29,6 +29,7 @@ public:
     };
     int32_t ref_count;
     bool recently_used = false;
+    bool contains_deleted_entries = false;
     pthread_rwlock_t rw_lock;
 
     Header header;

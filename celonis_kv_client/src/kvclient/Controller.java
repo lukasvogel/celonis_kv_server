@@ -2,7 +2,6 @@ package kvclient;
 
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
@@ -25,7 +24,7 @@ public class Controller {
     public TextArea valueField;
 
     private Property<String> key = new SimpleStringProperty();
-    private Property<String> value =  new SimpleStringProperty();
+    private Property<String> value = new SimpleStringProperty();
 
 
     private HttpClient client = HttpClient.newBuilder()
@@ -39,7 +38,9 @@ public class Controller {
         valueField.textProperty().bindBidirectional(value);
     }
 
-    private static final String SERVER_URI = "http://localhost:9080/kv/";
+    private static final String SERVER_URI = "http://localhost:9080/";
+    private static final String API_PREFIX = "kv/";
+    private static final String CONTROL_PREFIX = "control/";
 
 
     @FXML
@@ -60,15 +61,20 @@ public class Controller {
         delete(key.getValue());
     }
 
+    @FXML
+    public void handleShutdown(ActionEvent e) {
+        shutdown();
+    }
 
 
 
-    public String get(String key) {
+
+    private String get(String key) {
 
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder()
-                    .uri(new URI(SERVER_URI + URLEncoder.encode(key, "UTF-8")))
+                    .uri(new URI(SERVER_URI + API_PREFIX + URLEncoder.encode(key, "UTF-8")))
                     .GET()
                     .build();
         } catch (URISyntaxException | UnsupportedEncodingException e) {
@@ -79,22 +85,20 @@ public class Controller {
         try {
             response = client.send(request, HttpResponse.BodyHandler.asString());
             if (response.statusCode() != 200) {
-                // Not our fault, the server should always accept keys.
-                throw new IllegalArgumentException("Key not found: " + key + ", server returned with: " + response.statusCode());
+                return "";
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            return null;
+            return "";
         }
         return response.body();
     }
 
-    @FXML
-    public void put(String key, String value) {
+    private void put(String key, String value) {
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder()
-                    .uri(new URI(SERVER_URI + URLEncoder.encode(key, "UTF-8")))
+                    .uri(new URI(SERVER_URI + API_PREFIX + URLEncoder.encode(key, "UTF-8")))
                     .PUT(HttpRequest.BodyProcessor.fromString(value))
                     .build();
         } catch (URISyntaxException | UnsupportedEncodingException e) {
@@ -105,6 +109,7 @@ public class Controller {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandler.asString());
             if (response.statusCode() != 200) {
                 // Not our fault, the server should always accept keys.
+                System.out.println(response.statusCode());
                 throw new IllegalStateException("PUT failed because of an internal server error, sorry");
             }
         } catch (IOException | InterruptedException e) {
@@ -112,12 +117,11 @@ public class Controller {
         }
     }
 
-    @FXML
-    public void delete(String key) {
+    private void delete(String key) {
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder()
-                    .uri(new URI(SERVER_URI + URLEncoder.encode(key, "UTF-8")))
+                    .uri(new URI(SERVER_URI + API_PREFIX + URLEncoder.encode(key, "UTF-8")))
                     .DELETE(HttpRequest.noBody())
                     .build();
         } catch (URISyntaxException | UnsupportedEncodingException e) {
@@ -135,6 +139,29 @@ public class Controller {
         }
 
     }
+
+
+    private void shutdown() {
+        HttpRequest request;
+        try {
+            request = HttpRequest.newBuilder()
+                    .uri(new URI(SERVER_URI + CONTROL_PREFIX + "shutdown"))
+                    .PUT(HttpRequest.noBody())
+                    .build();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Command is malformed");
+        }
+
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandler.asString());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
 
 
 }

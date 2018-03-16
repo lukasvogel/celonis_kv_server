@@ -16,8 +16,8 @@ bool Bucket::put(size_t hash, const string &key, const string &value) {
     if (free_space >= entry_size + sizeof(EntryPosition)) {
         // we have enough room, write the data
         insert(hash, key, value);
-    } else {
-        // not enough space, first try compacting
+    } else if (contains_deleted_entries){
+        // not enough space, but we can make space! First try compacting
         compact();
 
         // retry insertion
@@ -29,6 +29,8 @@ bool Bucket::put(size_t hash, const string &key, const string &value) {
             // caller has to split us
             return false;
         }
+    } else {
+        return false;
     }
     return true;
 }
@@ -52,6 +54,7 @@ void Bucket::del(size_t hash, const string &key) {
 
     if (find(hash, key, ep, eh)) {
         ep->status = EntryPosition::Status::DELETED;
+        contains_deleted_entries = true;
     }
 }
 
@@ -143,6 +146,7 @@ void Bucket::compact() {
     // save new offsets
     header.offset_end = write_ep;
     header.data_begin = write_entry;
+    contains_deleted_entries = false;
 }
 
 double Bucket::get_usage() {
@@ -169,6 +173,7 @@ void Bucket::split(size_t global_depth, Bucket &new_bucket, size_t hash_to_inser
         ep_offset += sizeof(EntryPosition);
     }
 
+    // all other entries stay here, compact them
     compact();
     auto hash_sig_part = hash_to_insert & ((1 << global_depth) - 1);
     if (((hash_sig_part >> header.local_depth) & 1) == 1) {
@@ -177,7 +182,6 @@ void Bucket::split(size_t global_depth, Bucket &new_bucket, size_t hash_to_inser
         insert(hash_to_insert, key_to_insert, value_to_insert);
     }
 
-    // all other entries stay here, compact them
 
     // update depths
     header.local_depth += 1;
