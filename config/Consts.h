@@ -11,7 +11,7 @@
 
 
 static const size_t BUCKET_SIZE = 4 * 1024; // 4 kb
-static const size_t MAX_MEMORY = 10 * 1024 * 1024; // 1 mb;
+static const size_t MAX_MEMORY = 200 * 1024 * 1024; // 1 mb;
 static constexpr size_t BUCKETS_IN_MEM = MAX_MEMORY / BUCKET_SIZE;
 
 static const char* PAGE_FILE = "storage.dat";

@@ -6,7 +6,6 @@
 #define CELONIS_KV_SERVER_BUFFERMANAGER_H
 
 
-#include <cstring>
 #include <vector>
 #include <unordered_map>
 #include <mutex>

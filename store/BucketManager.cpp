@@ -3,18 +3,12 @@
 //
 
 #include "BucketManager.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cerrno>
-#include <cstring>
-
 #include <iostream>
-#include <bits/stat.h>
-#include <cstdio>
 #include <fcntl.h>
-#include <cassert>
+#include <cstring>
 
 
 BucketManager::BucketManager() {

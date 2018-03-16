@@ -2,6 +2,7 @@
 // Created by Lukas on 09.03.2018.
 //
 
+#include <cstring>
 #include "Bucket.h"
 
 bool Bucket::put(size_t hash, const string &key, const string &value) {

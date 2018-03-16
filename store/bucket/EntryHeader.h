@@ -6,7 +6,6 @@
 #define CELONIS_KV_SERVER_ENTRYHEADER_H
 
 
-#include <cstring>
 
 class EntryHeader {
 
@@ -20,7 +19,7 @@ public:
 
     }
 
-    EntryHeader(size_t key_size, size_t value_size) :
+    EntryHeader(unsigned key_size, unsigned value_size) :
             key_size(key_size),
             value_size(value_size) {
     }

@@ -6,10 +6,9 @@
 #define CELONIS_KV_SERVER_BUFFER_H
 
 
-#include <cstdint>
-#include <cstdlib>
-#include <stdint-gcc.h>
-#include <atomic>
+#include <sys/param.h>
+#include <pthread.h>
+#include <string>
 #include "EntryPosition.h"
 #include "EntryHeader.h"
 #include "../../config/Consts.h"

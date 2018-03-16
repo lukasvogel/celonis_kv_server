@@ -505,7 +505,6 @@ TEST(Performance, PerformanceTest1000outOf1Million) {
 
 TEST(Performance, Scaling) {
     cleanup();
-    KVStore store;
 
     const static int START_POW = 2;
 
@@ -513,6 +512,8 @@ TEST(Performance, Scaling) {
 
 
     for (int it = START_POW; it <= STOP_POW; it++) {
+        cleanup();
+        KVStore store;
         double num_elems = pow(10, it);
         cout << endl;
         cout << endl;
