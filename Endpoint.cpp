@@ -35,6 +35,12 @@ void Endpoint::setup_routes() {
 void Endpoint::handle_put(const Rest::Request &request, Http::ResponseWriter response) {
     string key = request.param(":key").as<std::string>();
 
+    // If we do not have enough space, tell the client and don't insert
+    // We have to add 2 bytes because strings will be null terminated
+    if (key.length() + request.body().length() + 2 + SIZE_OF_ENTRY_METADATA > BUCKET_SIZE) {
+        response.send(Http::Code::Insufficient_Storage);
+        return;
+    }
     cout << "PUT: " << key  << " -> " << request.body() << endl;
 
     store.put(key,request.body());
@@ -61,7 +67,7 @@ void Endpoint::handle_delete(const Rest::Request &request, Http::ResponseWriter 
 }
 
 void Endpoint::handle_stop(const Rest::Request &request, Http::ResponseWriter response) {
-    store.flush();
+    store.stop();
     cout << "Shutting down..." << endl;
 
     response.send(Http::Code::Ok);

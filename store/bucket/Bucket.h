@@ -17,6 +17,7 @@ class Bucket {
 
 public:
     static const uint16_t NEWLY_CREATED_MASK = 0x1;
+    static const uint16_t DIRTY_MASK = 0x2;
 
     struct Header {
         size_t bucket_id = 0;

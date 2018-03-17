@@ -93,6 +93,11 @@ unsigned BucketManager::evict() {
 
 void BucketManager::flush(Bucket &bucket) {
 
+    if ((bucket.header.status & Bucket::DIRTY_MASK) == 0) {
+        // If the dirty mask is not set, we don't have to do anything
+        return;
+    }
+
     size_t bucket_size = BUCKET_SIZE + sizeof(Bucket::Header);
     size_t bucket_offset = (bucket.header.bucket_id * bucket_size);
 

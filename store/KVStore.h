@@ -27,7 +27,8 @@ public:
 
     void del(const string &key);
 
-    void flush();
+    void stop();
+
 
 
     //debug

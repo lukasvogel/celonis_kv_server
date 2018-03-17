@@ -13,6 +13,7 @@ using namespace std;
 void KVStore::put(const string &key, const string &value) {
     size_t h = hash<string>()(key);
 
+    // We have to write to the hash table, so get a write lock
     pthread_rwlock_wrlock(&hashtable_lock);
     Bucket &b = get_bucket(h, true);
 
@@ -34,7 +35,6 @@ void KVStore::put(const string &key, const string &value) {
         }
 
         if (b.header.local_depth < global_depth) {
-
             Bucket &b2 = bm.get(++max_bucket_no, true);
 
             // Put new bucket into duplicated position in the index
@@ -45,11 +45,11 @@ void KVStore::put(const string &key, const string &value) {
                     }
                 }
             }
+            // we can unlock here, as we still have a write lock on the new bucket
             pthread_rwlock_unlock(&hashtable_lock);
 
             // split bucket into two
             b.split(global_depth, b2, h, key, value);
-
             bm.release(b2);
         } else {
             pthread_rwlock_unlock(&hashtable_lock);
@@ -79,7 +79,6 @@ void KVStore::del(const string &key) {
 
 Bucket &KVStore::get_bucket(size_t hash, bool exclusive) {
     size_t num = hash & ((1 << global_depth) - 1);
-
     return bm.get(buckets[num], exclusive);
 }
 
@@ -117,8 +116,6 @@ KVStore::KVStore() :
         pread(index_file_fd, &page_no, sizeof(size_t), offset);
         buckets.push_back(page_no);
     }
-
-
 }
 
 void KVStore::print_table_layout() {
@@ -129,7 +126,7 @@ void KVStore::print_table_layout() {
     cout << endl;
 }
 
-void KVStore::flush() {
+void KVStore::stop() {
 
     // Flush all pages in memory
     bm.flush_all();
@@ -156,13 +153,9 @@ void KVStore::flush() {
     if (pwrite(index_file_fd, &buckets[0], buckets.size() * sizeof(size_t), 3 * sizeof(size_t)) == -1) {
         std::cerr << "cannot write index: " << strerror(errno) << std::endl;
     }
-
+    close(index_file_fd);
 }
 
 KVStore::~KVStore() {
-    flush();
-    close(index_file_fd);
-
+    stop();
 }
-
-

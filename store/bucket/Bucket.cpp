@@ -6,6 +6,9 @@
 #include "Bucket.h"
 
 bool Bucket::put(size_t hash, const string &key, const string &value) {
+    // We change the contents of this bucket, so set the dirty bit
+    header.status |= DIRTY_MASK;
+
     // first delete a potentially already existing entry (for update)
     del(hash, key);
 
@@ -155,6 +158,8 @@ double Bucket::get_usage() {
 }
 
 void Bucket::split(size_t global_depth, Bucket &new_bucket, size_t hash_to_insert, string key_to_insert, string value_to_insert) {
+    // The new bucket will be changed, so set it to be dirty
+    new_bucket.header.status |= DIRTY_MASK;
     size_t ep_offset = 0;
     // Iterate through all entries
     while (ep_offset < header.offset_end) {
