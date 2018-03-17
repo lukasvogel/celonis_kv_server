@@ -34,12 +34,16 @@ void Endpoint::setup_routes() {
 
 void Endpoint::handle_put(const Rest::Request &request, Http::ResponseWriter response) {
     string key = request.param(":key").as<std::string>();
+
+    cout << "PUT: " << key  << " -> " << request.body() << endl;
+
     store.put(key,request.body());
     response.send(Http::Code::Ok);
 }
 
 void Endpoint::handle_get(const Rest::Request &request, Http::ResponseWriter response) {
     string key = request.param(":key").as<std::string>();
+    cout << "GET: " << key << endl;
 
     string value;
     if(store.get(key,value)) {
@@ -51,12 +55,15 @@ void Endpoint::handle_get(const Rest::Request &request, Http::ResponseWriter res
 
 void Endpoint::handle_delete(const Rest::Request &request, Http::ResponseWriter response) {
     string key = request.param(":key").as<std::string>();
+    cout << "DELETE: " << key << endl;
     store.del(key);
     response.send(Http::Code::Ok);
 }
 
 void Endpoint::handle_stop(const Rest::Request &request, Http::ResponseWriter response) {
     store.flush();
+    cout << "Shutting down..." << endl;
+
     response.send(Http::Code::Ok);
     shutdown();
     exit(1);

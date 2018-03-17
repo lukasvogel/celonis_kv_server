@@ -15,6 +15,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 
+import static javafx.application.Platform.exit;
+
 
 public class Controller {
 
@@ -62,7 +64,7 @@ public class Controller {
     }
 
     @FXML
-    public void handleShutdown(ActionEvent e) {
+    public void handleShutdownAction(ActionEvent e) {
         shutdown();
     }
 
@@ -145,18 +147,20 @@ public class Controller {
         HttpRequest request;
         try {
             request = HttpRequest.newBuilder()
-                    .uri(new URI(SERVER_URI + CONTROL_PREFIX + "shutdown"))
-                    .PUT(HttpRequest.noBody())
+                    .uri(new URI(SERVER_URI + CONTROL_PREFIX + "stop"))
+                    .POST(HttpRequest.noBody())
                     .build();
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Command is malformed");
         }
 
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandler.asString());
+            client.send(request, HttpResponse.BodyHandler.asString());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+
+        exit();
 
     }
 
