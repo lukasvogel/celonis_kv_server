@@ -6,8 +6,9 @@
 
 
 void Endpoint::init()  {
-    auto opts = Http::Endpoint::options();
-    opts.threads(4);
+    auto opts = Http::Endpoint::options()
+            .threads(4)
+            .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
 
     http_endpoint->init(opts);
     setup_routes();
