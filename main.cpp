@@ -10,5 +10,4 @@ int main() {
 
     endpoint.init();
     endpoint.start();
-
 }

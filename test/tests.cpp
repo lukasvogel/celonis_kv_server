@@ -510,7 +510,7 @@ TEST(Performance, Scaling) {
 
     cout << "PUT, GET, DELETE" << endl;
 
-    for (int num_elems = 100000; num_elems < 10000000; num_elems += 100000) {
+    for (int num_elems = 800000; num_elems < 8000000; num_elems += 100000) {
         cleanup();
         store = new KVStore();
 

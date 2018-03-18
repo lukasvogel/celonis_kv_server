@@ -49,7 +49,7 @@ void KVStore::put(const string &key, const string &value) {
             pthread_rwlock_unlock(&hashtable_lock);
 
             // split bucket into two
-            b.split(global_depth, b2, h, key, value);
+            b.split(b2, h, key, value);
             bm.release(b2);
         } else {
             pthread_rwlock_unlock(&hashtable_lock);
@@ -118,7 +118,7 @@ KVStore::KVStore() :
     }
 }
 
-void KVStore::print_table_layout() {
+void KVStore::print_index_layout() {
     cout << "| ";
     for (int i = 0; i < buckets.size(); i++) {
         cout << buckets[i] << " | ";

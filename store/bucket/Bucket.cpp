@@ -157,17 +157,16 @@ double Bucket::get_usage() {
     return 1 - (header.data_begin - header.offset_end) / (BUCKET_SIZE * 1.0);
 }
 
-void Bucket::split(size_t global_depth, Bucket &new_bucket, size_t hash_to_insert, string key_to_insert, string value_to_insert) {
+void Bucket::split(Bucket &new_bucket, size_t hash_to_insert, string key_to_insert, string value_to_insert) {
     // The new bucket will be changed, so set it to be dirty
     new_bucket.header.status |= DIRTY_MASK;
     size_t ep_offset = 0;
     // Iterate through all entries
     while (ep_offset < header.offset_end) {
         auto *ep = reinterpret_cast<EntryPosition *>(data + ep_offset);
-        auto hash_sig_part = ep->hash_code & ((1 << global_depth) - 1);
 
         // If hash has a 1 at the local depth, it belongs into the new bucket, insert it there
-        if (((hash_sig_part >> header.local_depth) & 1) == 1) {
+        if (((ep->hash_code >> header.local_depth) & 1) == 1) {
             auto *eh = reinterpret_cast<EntryHeader *>(data + ep->offset);
             char *key = data + ep->offset + sizeof(EntryHeader);
             char *value = key + eh->key_size;
@@ -181,8 +180,7 @@ void Bucket::split(size_t global_depth, Bucket &new_bucket, size_t hash_to_inser
 
     // all other entries stay here, compact them
     compact();
-    auto hash_sig_part = hash_to_insert & ((1 << global_depth) - 1);
-    if (((hash_sig_part >> header.local_depth) & 1) == 1) {
+    if (((hash_to_insert >> header.local_depth) & 1) == 1) {
         new_bucket.insert(hash_to_insert, key_to_insert, value_to_insert);
     } else {
         insert(hash_to_insert, key_to_insert, value_to_insert);
